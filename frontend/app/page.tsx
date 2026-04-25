@@ -93,6 +93,7 @@ function Field({
           placeholder={placeholder}
           value={value}
           min={type === "number" ? 1 : undefined}
+          step={type === "number" ? 1 : undefined}
           onChange={(e) => onChange(id, e.target.value)}
           className={`${suffix ? "w-24" : "w-full"} h-9 px-3 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-400 focus:bg-white transition-all`}
         />
@@ -159,11 +160,13 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formWidth, setFormWidth] = useState(420);
+  const formWidthRef = useRef(formWidth);
+  formWidthRef.current = formWidth;
   const dragState = useRef<{ startX: number; startWidth: number } | null>(null);
 
   const onDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    dragState.current = { startX: e.clientX, startWidth: formWidth };
+    dragState.current = { startX: e.clientX, startWidth: formWidthRef.current };
 
     function onMove(ev: MouseEvent) {
       if (!dragState.current) return;
@@ -179,7 +182,7 @@ export default function Home() {
 
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);
-  }, [formWidth]);
+  }, []);
 
   function handleChange(id: keyof FormData, val: string) {
     setForm((prev) => ({ ...prev, [id]: val }));
@@ -202,8 +205,12 @@ export default function Home() {
       });
 
       if (!res.ok) {
-        const body = await res.json();
-        setError(body.error ?? "Failed to generate PDF.");
+        let message = "Failed to generate PDF.";
+        try {
+          const body = await res.json();
+          message = body.error ?? message;
+        } catch { /* non-JSON error body, keep default */ }
+        setError(message);
         return;
       }
 
