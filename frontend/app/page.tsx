@@ -1,17 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { NdaPreview } from "@/components/nda-preview";
 
 interface FormData {
   partyAName: string;
@@ -47,6 +37,30 @@ const empty: FormData = {
   jurisdiction: "",
 };
 
+function FormSection({
+  badge,
+  title,
+  children,
+}: {
+  badge?: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/60 overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2.5">
+        {badge && (
+          <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-bold flex items-center justify-center shrink-0">
+            {badge}
+          </span>
+        )}
+        <h2 className="text-sm font-semibold text-slate-800">{title}</h2>
+      </div>
+      <div className="p-5 space-y-4">{children}</div>
+    </div>
+  );
+}
+
 function Field({
   id,
   label,
@@ -65,74 +79,78 @@ function Field({
   suffix?: string;
 }) {
   return (
-    <div className="grid gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
+    <div>
+      <label
+        htmlFor={id}
+        className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5"
+      >
+        {label}
+      </label>
       <div className="flex items-center gap-2">
-        <Input
+        <input
           id={id}
           type={type}
           placeholder={placeholder}
           value={value}
           min={type === "number" ? 1 : undefined}
           onChange={(e) => onChange(id, e.target.value)}
-          className={suffix ? "w-32" : ""}
+          className={`${suffix ? "w-24" : "w-full"} h-9 px-3 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-400 focus:bg-white transition-all`}
         />
         {suffix && (
-          <span className="text-sm text-muted-foreground">{suffix}</span>
+          <span className="text-xs text-slate-400 whitespace-nowrap">
+            {suffix}
+          </span>
         )}
       </div>
     </div>
   );
 }
 
-function PartyFields({
+function PartySection({
   prefix,
   label,
+  badge,
   form,
   onChange,
 }: {
   prefix: "partyA" | "partyB";
   label: string;
+  badge: string;
   form: FormData;
   onChange: (id: keyof FormData, val: string) => void;
 }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{label}</CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-4">
-        <Field
-          id={`${prefix}Name` as keyof FormData}
-          label="Full Name"
-          placeholder="Jane Smith"
-          value={form[`${prefix}Name` as keyof FormData]}
-          onChange={onChange}
-        />
-        <Field
-          id={`${prefix}Company` as keyof FormData}
-          label="Company"
-          placeholder="Acme Corp"
-          value={form[`${prefix}Company` as keyof FormData]}
-          onChange={onChange}
-        />
-        <Field
-          id={`${prefix}Address` as keyof FormData}
-          label="Address"
-          placeholder="123 Main St, San Francisco, CA 94105"
-          value={form[`${prefix}Address` as keyof FormData]}
-          onChange={onChange}
-        />
-        <Field
-          id={`${prefix}Email` as keyof FormData}
-          label="Email"
-          placeholder="jane@acme.com"
-          value={form[`${prefix}Email` as keyof FormData]}
-          onChange={onChange}
-          type="email"
-        />
-      </CardContent>
-    </Card>
+    <FormSection badge={badge} title={label}>
+      <Field
+        id={`${prefix}Name` as keyof FormData}
+        label="Full Name"
+        placeholder="Jane Smith"
+        value={form[`${prefix}Name` as keyof FormData]}
+        onChange={onChange}
+      />
+      <Field
+        id={`${prefix}Company` as keyof FormData}
+        label="Company"
+        placeholder="Acme Corp"
+        value={form[`${prefix}Company` as keyof FormData]}
+        onChange={onChange}
+      />
+      <Field
+        id={`${prefix}Address` as keyof FormData}
+        label="Address"
+        placeholder="123 Main St, San Francisco, CA 94105"
+        value={form[`${prefix}Address` as keyof FormData]}
+        onChange={onChange}
+      />
+      <Field
+        id={`${prefix}Email` as keyof FormData}
+        label="Email"
+        placeholder="jane@acme.com"
+        value={form[`${prefix}Email` as keyof FormData]}
+        onChange={onChange}
+        type="email"
+      />
+    </FormSection>
   );
 }
 
@@ -182,29 +200,41 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-muted/40 py-12 px-4">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Mutual NDA Creator
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Fill in the details below to generate a Mutual Non-Disclosure
-            Agreement PDF.
-          </p>
+    <div className="h-screen flex flex-col bg-slate-900">
+      {/* Header */}
+      <header className="flex-none h-13 bg-slate-900 border-b border-slate-700/60 flex items-center px-6 gap-4">
+        <div className="flex items-center gap-2.5">
+          <span className="text-indigo-400 text-lg">⚖</span>
+          <span className="text-white font-semibold text-sm tracking-tight">
+            PreLegal
+          </span>
         </div>
+        <span className="text-slate-600 text-sm">/</span>
+        <span className="text-slate-300 text-sm">Mutual NDA Creator</span>
+        <div className="ml-auto">
+          <span className="text-[11px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full px-2.5 py-0.5 font-medium tracking-wide">
+            PROTOTYPE
+          </span>
+        </div>
+      </header>
 
-        <PartyFields prefix="partyA" label="Party A" form={form} onChange={handleChange} />
-        <PartyFields prefix="partyB" label="Party B" form={form} onChange={handleChange} />
+      {/* Two-column body */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left: Form */}
+        <div className="w-[420px] flex-none overflow-y-auto bg-slate-50 p-5 space-y-4 border-r border-slate-200">
+          <div className="pt-1 pb-2">
+            <h1 className="text-base font-semibold text-slate-800">
+              Fill in the details
+            </h1>
+            <p className="text-xs text-slate-400 mt-0.5">
+              The document preview updates as you type.
+            </p>
+          </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Agreement Terms</CardTitle>
-            <CardDescription>
-              Define the scope and duration of the NDA.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
+          <PartySection prefix="partyA" label="Party A" badge="A" form={form} onChange={handleChange} />
+          <PartySection prefix="partyB" label="Party B" badge="B" form={form} onChange={handleChange} />
+
+          <FormSection title="Agreement Terms">
             <Field
               id="purpose"
               label="Purpose"
@@ -226,7 +256,7 @@ export default function Home() {
               value={form.mndaTermYears}
               onChange={handleChange}
               type="number"
-              suffix="year(s) from the Effective Date"
+              suffix="year(s) from effective date"
             />
             <Field
               id="confidentialityYears"
@@ -235,19 +265,11 @@ export default function Home() {
               value={form.confidentialityYears}
               onChange={handleChange}
               type="number"
-              suffix="year(s) from the Effective Date"
+              suffix="year(s) from effective date"
             />
-          </CardContent>
-        </Card>
+          </FormSection>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Legal Jurisdiction</CardTitle>
-            <CardDescription>
-              Specify the governing law and courts.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
+          <FormSection title="Legal Jurisdiction">
             <Field
               id="governingLaw"
               label="Governing Law (State)"
@@ -262,37 +284,48 @@ export default function Home() {
               value={form.jurisdiction}
               onChange={handleChange}
             />
-          </CardContent>
-        </Card>
+          </FormSection>
 
-        <Separator />
+          <div className="pb-4 space-y-3">
+            {error && (
+              <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {error}
+              </p>
+            )}
+            <button
+              onClick={handleGenerate}
+              disabled={loading}
+              className="w-full h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-semibold tracking-wide transition-colors shadow-sm cursor-pointer"
+            >
+              {loading ? "Generating…" : "↓ Generate PDF"}
+            </button>
+            <p className="text-[11px] text-center text-slate-400">
+              Common Paper MNDA v1.0 ·{" "}
+              <a
+                href="https://creativecommons.org/licenses/by/4.0/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2"
+              >
+                CC BY 4.0
+              </a>
+            </p>
+          </div>
+        </div>
 
-        {error && (
-          <p className="text-sm text-destructive font-medium">{error}</p>
-        )}
-
-        <Button
-          size="lg"
-          className="w-full"
-          onClick={handleGenerate}
-          disabled={loading}
-        >
-          {loading ? "Generating PDF…" : "Generate PDF"}
-        </Button>
-
-        <p className="text-xs text-center text-muted-foreground">
-          Based on the{" "}
-          <a
-            href="https://commonpaper.com/standards/mutual-nda/1.0/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2"
-          >
-            Common Paper Mutual NDA v1.0
-          </a>{" "}
-          · Licensed under CC BY 4.0
-        </p>
+        {/* Right: Preview */}
+        <div className="flex-1 overflow-y-auto bg-slate-100 px-8 py-8">
+          <div className="flex items-center justify-between mb-5">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+              Document Preview
+            </p>
+            <span className="text-[11px] text-slate-400 bg-white border border-slate-200 rounded-full px-2.5 py-0.5">
+              Live
+            </span>
+          </div>
+          <NdaPreview data={form} />
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
