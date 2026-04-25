@@ -1,0 +1,86 @@
+LICENSE INFORMATION FOR LEGAL DOCUMENT TEMPLATES
+=================================================
+
+These legal document templates are sourced from Common Paper
+(https://commonpaper.com) and are licensed under the
+Creative Commons Attribution 4.0 International License (CC BY 4.0).
+
+License URL: https://creativecommons.org/licenses/by/4.0/
+
+You are free to:
+  - Share: copy and redistribute the material in any medium or format
+  - Adapt: remix, transform, and build upon the material for any purpose,
+    even commercially
+
+Under the following terms:
+  - Attribution: You must give appropriate credit to Common Paper,
+    provide a link to the license, and indicate if changes were made.
+
+-------------------------------------------------------------------------------
+
+TEMPLATE FILES AND LICENSE DETAILS
+-----------------------------------
+
+File: AI-Addendum.md
+  Name:    AI/ML Addendum
+  Source:  Common Paper (https://commonpaper.com)
+  License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+File: BAA.md
+  Name:    Business Associate Agreement (BAA)
+  Source:  Common Paper (https://commonpaper.com)
+  License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+File: CSA.md
+  Name:    Cloud Service Agreement (CSA)
+  Source:  Common Paper (https://commonpaper.com)
+  License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+File: design-partner-agreement.md
+  Name:    Design Partner Agreement
+  Source:  Common Paper (https://commonpaper.com)
+  License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+File: DPA.md
+  Name:    Data Processing Agreement (DPA)
+  Source:  Common Paper (https://commonpaper.com)
+  License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+File: Mutual-NDA.md
+  Name:    Mutual Non-Disclosure Agreement (MNDA)
+  Source:  Common Paper (https://commonpaper.com)
+  License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+File: Partnership-Agreement.md
+  Name:    Partnership Agreement
+  Source:  Common Paper (https://commonpaper.com)
+  License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+File: Pilot-Agreement.md
+  Name:    Pilot Agreement
+  Source:  Common Paper (https://commonpaper.com)
+  License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+File: psa.md
+  Name:    Professional Services Agreement (PSA)
+  Source:  Common Paper (https://commonpaper.com)
+  License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+File: sla.md
+  Name:    Service Level Agreement (SLA)
+  Source:  Common Paper (https://commonpaper.com)
+  License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+File: Software-License-Agreement.md
+  Name:    Software License Agreement
+  Source:  Common Paper (https://commonpaper.com)
+  License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+-------------------------------------------------------------------------------
+
+DISCLAIMER
+----------
+
+These templates are provided for informational purposes only and do not
+constitute legal advice. You should consult a qualified attorney before
+using any of these templates in a real legal context.
