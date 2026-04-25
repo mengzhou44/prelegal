@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { NdaPreview } from "@/components/nda-preview";
 
 interface FormData {
@@ -158,6 +158,28 @@ export default function Home() {
   const [form, setForm] = useState<FormData>(empty);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formWidth, setFormWidth] = useState(420);
+  const dragState = useRef<{ startX: number; startWidth: number } | null>(null);
+
+  const onDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    dragState.current = { startX: e.clientX, startWidth: formWidth };
+
+    function onMove(ev: MouseEvent) {
+      if (!dragState.current) return;
+      const delta = ev.clientX - dragState.current.startX;
+      setFormWidth(Math.min(700, Math.max(280, dragState.current.startWidth + delta)));
+    }
+
+    function onUp() {
+      dragState.current = null;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    }
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }, [formWidth]);
 
   function handleChange(id: keyof FormData, val: string) {
     setForm((prev) => ({ ...prev, [id]: val }));
@@ -200,19 +222,19 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-slate-900">
+    <div className="h-screen flex flex-col bg-white">
       {/* Header */}
-      <header className="flex-none h-13 bg-slate-900 border-b border-slate-700/60 flex items-center px-6 gap-4">
+      <header className="flex-none h-13 bg-white border-b border-slate-200 flex items-center px-6 gap-4">
         <div className="flex items-center gap-2.5">
-          <span className="text-indigo-400 text-lg">⚖</span>
-          <span className="text-white font-semibold text-sm tracking-tight">
+          <span className="text-indigo-500 text-lg">⚖</span>
+          <span className="text-slate-800 font-semibold text-sm tracking-tight">
             PreLegal
           </span>
         </div>
-        <span className="text-slate-600 text-sm">/</span>
-        <span className="text-slate-300 text-sm">Mutual NDA Creator</span>
+        <span className="text-slate-300 text-sm">/</span>
+        <span className="text-slate-500 text-sm">Mutual NDA Creator</span>
         <div className="ml-auto">
-          <span className="text-[11px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full px-2.5 py-0.5 font-medium tracking-wide">
+          <span className="text-[11px] bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-full px-2.5 py-0.5 font-medium tracking-wide">
             PROTOTYPE
           </span>
         </div>
@@ -221,7 +243,7 @@ export default function Home() {
       {/* Two-column body */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left: Form */}
-        <div className="w-[420px] flex-none overflow-y-auto bg-slate-50 p-5 space-y-4 border-r border-slate-200">
+        <div style={{ width: formWidth }} className="flex-none overflow-y-auto bg-slate-50 p-5 space-y-4">
           <div className="pt-1 pb-2">
             <h1 className="text-base font-semibold text-slate-800">
               Fill in the details
@@ -312,6 +334,13 @@ export default function Home() {
             </p>
           </div>
         </div>
+
+        {/* Drag handle */}
+        <div
+          onMouseDown={onDragStart}
+          className="w-1.5 flex-none bg-slate-200 hover:bg-indigo-400 active:bg-indigo-500 cursor-col-resize transition-colors"
+          title="Drag to resize"
+        />
 
         {/* Right: Preview */}
         <div className="flex-1 overflow-y-auto bg-slate-100 px-8 py-8">

@@ -37,12 +37,12 @@ function yrs(value: string, label: string): ReactNode {
 
 export function NdaPreview({ data }: { data: PreviewData }) {
   return (
-    <div className="bg-white rounded-xl shadow-xl ring-1 ring-slate-200/80 max-w-[700px] mx-auto px-16 py-14 font-serif text-[11px] leading-[1.75] text-slate-800 selection:bg-indigo-100">
+    <div className="bg-white rounded-xl shadow-xl ring-1 ring-slate-200/80 max-w-[700px] mx-auto px-16 py-14 text-[13px] leading-[1.8] text-slate-800 selection:bg-indigo-100" style={{ fontFamily: "var(--font-lora), Georgia, serif" }}>
       {/* Title */}
-      <h1 className="text-center text-[15px] font-bold uppercase tracking-[0.18em] mb-1">
+      <h1 className="text-center text-[17px] font-bold uppercase tracking-[0.18em] mb-1">
         Mutual Non-Disclosure Agreement
       </h1>
-      <p className="text-center text-[10px] text-slate-400 mb-10 tracking-wide">
+      <p className="text-center text-[11px] text-slate-400 mb-10 tracking-wide">
         Based on Common Paper MNDA v1.0 · CC BY 4.0
       </p>
 
@@ -166,7 +166,7 @@ export function NdaPreview({ data }: { data: PreviewData }) {
         <SignatureBlock party="Party B" name={data.partyBName} company={data.partyBCompany} />
       </div>
 
-      <p className="text-center text-[9px] text-slate-300 mt-10 tracking-wide">
+      <p className="text-center text-[10px] text-slate-300 mt-10 tracking-wide">
         Common Paper Mutual NDA v1.0 · CC BY 4.0 · commonpaper.com
       </p>
     </div>
@@ -175,7 +175,7 @@ export function NdaPreview({ data }: { data: PreviewData }) {
 
 function SectionHeading({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <h2 className={`text-[11px] font-bold uppercase tracking-widest text-slate-500 border-b border-slate-200 pb-1.5 mb-4 ${className}`}>
+    <h2 className={`text-[12px] font-bold uppercase tracking-widest text-slate-500 border-b border-slate-200 pb-1.5 mb-4 ${className}`}>
       {children}
     </h2>
   );
@@ -183,7 +183,7 @@ function SectionHeading({ children, className = "" }: { children: ReactNode; cla
 
 function PartyHeading({ label }: { label: string }) {
   return (
-    <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 mb-2">
+    <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-600 mb-2">
       {label}
     </p>
   );
