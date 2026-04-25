@@ -8,14 +8,18 @@ import {
 } from "@react-pdf/renderer";
 
 export interface NdaFormData {
-  partyName: string;
-  partyCompany: string;
-  partyAddress: string;
-  partyEmail: string;
+  partyAName: string;
+  partyACompany: string;
+  partyAAddress: string;
+  partyAEmail: string;
+  partyBName: string;
+  partyBCompany: string;
+  partyBAddress: string;
+  partyBEmail: string;
   purpose: string;
   effectiveDate: string;
-  mndaTerm: string;
-  termOfConfidentiality: string;
+  mndaTermYears: number;
+  confidentialityYears: number;
   governingLaw: string;
   jurisdiction: string;
 }
@@ -82,23 +86,47 @@ export function NdaDocument({ data }: { data: NdaFormData }) {
 
         {/* Cover Page */}
         <Text style={styles.sectionTitle}>Cover Page</Text>
+
+        <Text style={styles.sectionTitle}>Party A</Text>
         <View style={styles.coverRow}>
-          <Text style={styles.coverLabel}>Party Name:</Text>
-          <Text style={styles.coverValue}>{data.partyName}</Text>
+          <Text style={styles.coverLabel}>Name:</Text>
+          <Text style={styles.coverValue}>{data.partyAName}</Text>
         </View>
         <View style={styles.coverRow}>
           <Text style={styles.coverLabel}>Company:</Text>
-          <Text style={styles.coverValue}>{data.partyCompany}</Text>
+          <Text style={styles.coverValue}>{data.partyACompany}</Text>
         </View>
         <View style={styles.coverRow}>
           <Text style={styles.coverLabel}>Address:</Text>
-          <Text style={styles.coverValue}>{data.partyAddress}</Text>
+          <Text style={styles.coverValue}>{data.partyAAddress}</Text>
         </View>
         <View style={styles.coverRow}>
           <Text style={styles.coverLabel}>Email:</Text>
-          <Text style={styles.coverValue}>{data.partyEmail}</Text>
+          <Text style={styles.coverValue}>{data.partyAEmail}</Text>
         </View>
+
         <View style={styles.divider} />
+
+        <Text style={styles.sectionTitle}>Party B</Text>
+        <View style={styles.coverRow}>
+          <Text style={styles.coverLabel}>Name:</Text>
+          <Text style={styles.coverValue}>{data.partyBName}</Text>
+        </View>
+        <View style={styles.coverRow}>
+          <Text style={styles.coverLabel}>Company:</Text>
+          <Text style={styles.coverValue}>{data.partyBCompany}</Text>
+        </View>
+        <View style={styles.coverRow}>
+          <Text style={styles.coverLabel}>Address:</Text>
+          <Text style={styles.coverValue}>{data.partyBAddress}</Text>
+        </View>
+        <View style={styles.coverRow}>
+          <Text style={styles.coverLabel}>Email:</Text>
+          <Text style={styles.coverValue}>{data.partyBEmail}</Text>
+        </View>
+
+        <View style={styles.divider} />
+
         <View style={styles.coverRow}>
           <Text style={styles.coverLabel}>Purpose:</Text>
           <Text style={styles.coverValue}>{data.purpose}</Text>
@@ -109,11 +137,15 @@ export function NdaDocument({ data }: { data: NdaFormData }) {
         </View>
         <View style={styles.coverRow}>
           <Text style={styles.coverLabel}>MNDA Term:</Text>
-          <Text style={styles.coverValue}>{data.mndaTerm}</Text>
+          <Text style={styles.coverValue}>
+            {data.mndaTermYears} {data.mndaTermYears === 1 ? "year" : "years"} from the Effective Date
+          </Text>
         </View>
         <View style={styles.coverRow}>
           <Text style={styles.coverLabel}>Term of Confidentiality:</Text>
-          <Text style={styles.coverValue}>{data.termOfConfidentiality}</Text>
+          <Text style={styles.coverValue}>
+            {data.confidentialityYears} {data.confidentialityYears === 1 ? "year" : "years"} from the Effective Date
+          </Text>
         </View>
         <View style={styles.coverRow}>
           <Text style={styles.coverLabel}>Governing Law:</Text>
@@ -179,10 +211,13 @@ export function NdaDocument({ data }: { data: NdaFormData }) {
         <View style={styles.clause}>
           <Text>
             <Text style={styles.clauseNumber}>5. Term and Termination. </Text>
-            This MNDA commences on {data.effectiveDate} and expires at the end
-            of {data.mndaTerm}. Either party may terminate for any reason upon
-            written notice. Confidentiality obligations survive for{" "}
-            {data.termOfConfidentiality} after expiration or termination.
+            This MNDA commences on {data.effectiveDate} and expires{" "}
+            {data.mndaTermYears} {data.mndaTermYears === 1 ? "year" : "years"}{" "}
+            from the Effective Date. Either party may terminate for any reason
+            upon written notice. Confidentiality obligations survive for{" "}
+            {data.confidentialityYears}{" "}
+            {data.confidentialityYears === 1 ? "year" : "years"} from the
+            Effective Date, despite any expiration or termination.
           </Text>
         </View>
 

@@ -4,26 +4,33 @@ import { generateNdaPdf, NdaFormData } from "@/lib/nda-pdf";
 export async function POST(req: NextRequest) {
   const data: NdaFormData = await req.json();
 
-  const required: (keyof NdaFormData)[] = [
-    "partyName",
-    "partyCompany",
-    "partyAddress",
-    "partyEmail",
-    "purpose",
-    "effectiveDate",
-    "mndaTerm",
-    "termOfConfidentiality",
-    "governingLaw",
-    "jurisdiction",
+  const requiredStrings: (keyof NdaFormData)[] = [
+    "partyAName", "partyACompany", "partyAAddress", "partyAEmail",
+    "partyBName", "partyBCompany", "partyBAddress", "partyBEmail",
+    "purpose", "effectiveDate", "governingLaw", "jurisdiction",
   ];
 
-  for (const field of required) {
-    if (!data[field]?.trim()) {
+  for (const field of requiredStrings) {
+    if (!(data[field] as string)?.trim()) {
       return NextResponse.json(
         { error: `Missing required field: ${field}` },
         { status: 400 }
       );
     }
+  }
+
+  if (!Number.isFinite(data.mndaTermYears) || data.mndaTermYears < 1) {
+    return NextResponse.json(
+      { error: "MNDA term must be at least 1 year." },
+      { status: 400 }
+    );
+  }
+
+  if (!Number.isFinite(data.confidentialityYears) || data.confidentialityYears < 1) {
+    return NextResponse.json(
+      { error: "Term of confidentiality must be at least 1 year." },
+      { status: 400 }
+    );
   }
 
   const buffer = await generateNdaPdf(data);

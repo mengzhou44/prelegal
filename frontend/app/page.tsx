@@ -14,27 +14,35 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 interface FormData {
-  partyName: string;
-  partyCompany: string;
-  partyAddress: string;
-  partyEmail: string;
+  partyAName: string;
+  partyACompany: string;
+  partyAAddress: string;
+  partyAEmail: string;
+  partyBName: string;
+  partyBCompany: string;
+  partyBAddress: string;
+  partyBEmail: string;
   purpose: string;
   effectiveDate: string;
-  mndaTerm: string;
-  termOfConfidentiality: string;
+  mndaTermYears: string;
+  confidentialityYears: string;
   governingLaw: string;
   jurisdiction: string;
 }
 
 const empty: FormData = {
-  partyName: "",
-  partyCompany: "",
-  partyAddress: "",
-  partyEmail: "",
+  partyAName: "",
+  partyACompany: "",
+  partyAAddress: "",
+  partyAEmail: "",
+  partyBName: "",
+  partyBCompany: "",
+  partyBAddress: "",
+  partyBEmail: "",
   purpose: "",
   effectiveDate: "",
-  mndaTerm: "",
-  termOfConfidentiality: "",
+  mndaTermYears: "",
+  confidentialityYears: "",
   governingLaw: "",
   jurisdiction: "",
 };
@@ -46,6 +54,7 @@ function Field({
   value,
   onChange,
   type = "text",
+  suffix,
 }: {
   id: keyof FormData;
   label: string;
@@ -53,18 +62,77 @@ function Field({
   value: string;
   onChange: (id: keyof FormData, val: string) => void;
   type?: string;
+  suffix?: string;
 }) {
   return (
     <div className="grid gap-1.5">
       <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(id, e.target.value)}
-      />
+      <div className="flex items-center gap-2">
+        <Input
+          id={id}
+          type={type}
+          placeholder={placeholder}
+          value={value}
+          min={type === "number" ? 1 : undefined}
+          onChange={(e) => onChange(id, e.target.value)}
+          className={suffix ? "w-32" : ""}
+        />
+        {suffix && (
+          <span className="text-sm text-muted-foreground">{suffix}</span>
+        )}
+      </div>
     </div>
+  );
+}
+
+function PartyFields({
+  prefix,
+  label,
+  form,
+  onChange,
+}: {
+  prefix: "partyA" | "partyB";
+  label: string;
+  form: FormData;
+  onChange: (id: keyof FormData, val: string) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{label}</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <Field
+          id={`${prefix}Name` as keyof FormData}
+          label="Full Name"
+          placeholder="Jane Smith"
+          value={form[`${prefix}Name` as keyof FormData]}
+          onChange={onChange}
+        />
+        <Field
+          id={`${prefix}Company` as keyof FormData}
+          label="Company"
+          placeholder="Acme Corp"
+          value={form[`${prefix}Company` as keyof FormData]}
+          onChange={onChange}
+        />
+        <Field
+          id={`${prefix}Address` as keyof FormData}
+          label="Address"
+          placeholder="123 Main St, San Francisco, CA 94105"
+          value={form[`${prefix}Address` as keyof FormData]}
+          onChange={onChange}
+        />
+        <Field
+          id={`${prefix}Email` as keyof FormData}
+          label="Email"
+          placeholder="jane@acme.com"
+          value={form[`${prefix}Email` as keyof FormData]}
+          onChange={onChange}
+          type="email"
+        />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -81,10 +149,16 @@ export default function Home() {
     setError(null);
     setLoading(true);
     try {
+      const payload = {
+        ...form,
+        mndaTermYears: Number(form.mndaTermYears),
+        confidentialityYears: Number(form.confidentialityYears),
+      };
+
       const res = await fetch("/api/generate-nda", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -120,43 +194,8 @@ export default function Home() {
           </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Details</CardTitle>
-            <CardDescription>Information about your party.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <Field
-              id="partyName"
-              label="Full Name"
-              placeholder="Jane Smith"
-              value={form.partyName}
-              onChange={handleChange}
-            />
-            <Field
-              id="partyCompany"
-              label="Company"
-              placeholder="Acme Corp"
-              value={form.partyCompany}
-              onChange={handleChange}
-            />
-            <Field
-              id="partyAddress"
-              label="Address"
-              placeholder="123 Main St, San Francisco, CA 94105"
-              value={form.partyAddress}
-              onChange={handleChange}
-            />
-            <Field
-              id="partyEmail"
-              label="Email"
-              placeholder="jane@acme.com"
-              value={form.partyEmail}
-              onChange={handleChange}
-              type="email"
-            />
-          </CardContent>
-        </Card>
+        <PartyFields prefix="partyA" label="Party A" form={form} onChange={handleChange} />
+        <PartyFields prefix="partyB" label="Party B" form={form} onChange={handleChange} />
 
         <Card>
           <CardHeader>
@@ -181,18 +220,22 @@ export default function Home() {
               onChange={handleChange}
             />
             <Field
-              id="mndaTerm"
+              id="mndaTermYears"
               label="MNDA Term"
-              placeholder="1 year from the Effective Date"
-              value={form.mndaTerm}
+              placeholder="1"
+              value={form.mndaTermYears}
               onChange={handleChange}
+              type="number"
+              suffix="year(s) from the Effective Date"
             />
             <Field
-              id="termOfConfidentiality"
+              id="confidentialityYears"
               label="Term of Confidentiality"
-              placeholder="2 years after termination"
-              value={form.termOfConfidentiality}
+              placeholder="2"
+              value={form.confidentialityYears}
               onChange={handleChange}
+              type="number"
+              suffix="year(s) from the Effective Date"
             />
           </CardContent>
         </Card>
