@@ -61,3 +61,6 @@ Thumbs.db
 
 # Generated data
 data/
+
+# Claude Code settings (contains secrets)
+.claude/
