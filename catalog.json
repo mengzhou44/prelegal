@@ -1,0 +1,63 @@
+{
+  "source": "Common Paper",
+  "source_url": "https://commonpaper.com",
+  "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "templates": [
+    {
+      "name": "AI Addendum",
+      "description": "Addendum covering the use of AI and machine learning services, including data handling, model usage restrictions, and AI-specific obligations.",
+      "filename": "templates/AI-Addendum.md"
+    },
+    {
+      "name": "Business Associate Agreement",
+      "description": "Agreement governing the handling of protected health information (PHI) between a covered entity and a business associate under HIPAA.",
+      "filename": "templates/BAA.md"
+    },
+    {
+      "name": "Cloud Service Agreement",
+      "description": "Agreement for the provision of cloud-hosted software services, covering access rights, acceptable use, support, and service availability.",
+      "filename": "templates/CSA.md"
+    },
+    {
+      "name": "Design Partner Agreement",
+      "description": "Agreement for early-stage design partnerships where a customer provides product feedback in exchange for early access or discounted pricing.",
+      "filename": "templates/design-partner-agreement.md"
+    },
+    {
+      "name": "Data Processing Agreement",
+      "description": "Agreement establishing the terms under which a processor handles personal data on behalf of a controller, in compliance with GDPR and similar regulations.",
+      "filename": "templates/DPA.md"
+    },
+    {
+      "name": "Mutual Non-Disclosure Agreement",
+      "description": "Bilateral confidentiality agreement protecting sensitive information exchanged between two parties exploring a potential business relationship.",
+      "filename": "templates/Mutual-NDA.md"
+    },
+    {
+      "name": "Partnership Agreement",
+      "description": "Agreement outlining the terms of a commercial partnership, including cooperation obligations, responsibilities, and revenue or referral arrangements.",
+      "filename": "templates/Partnership-Agreement.md"
+    },
+    {
+      "name": "Pilot Agreement",
+      "description": "Short-term agreement granting a prospective customer limited access to a product or service for evaluation purposes prior to a full commercial commitment.",
+      "filename": "templates/Pilot-Agreement.md"
+    },
+    {
+      "name": "Professional Services Agreement",
+      "description": "Agreement governing the delivery of professional or consulting services, including scope of work, deliverables, payment terms, and IP ownership.",
+      "filename": "templates/psa.md"
+    },
+    {
+      "name": "Service Level Agreement",
+      "description": "Agreement defining uptime commitments, incident response times, and remedies such as service credits for failures to meet availability targets.",
+      "filename": "templates/sla.md"
+    },
+    {
+      "name": "Software License Agreement",
+      "description": "Agreement granting rights to use software, including license scope, restrictions, support terms, and intellectual property ownership.",
+      "filename": "templates/Software-License-Agreement.md"
+    }
+  ]
+}
