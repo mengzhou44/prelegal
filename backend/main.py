@@ -1,7 +1,11 @@
+import json
 import os
+import re
 import time
 from contextlib import asynccontextmanager
 
+import httpx
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
@@ -10,6 +14,8 @@ from pydantic import BaseModel
 
 from database import init_db
 from pdf_generator import NdaData, generate_nda_pdf
+
+load_dotenv()
 
 
 @asynccontextmanager
@@ -122,6 +128,146 @@ async def generate_nda(request: Request):
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+def _extract_json(text: str) -> dict:
+    """Parse JSON from Claude's response.
+
+    Handles: plain JSON, ```json fences anywhere in the text, and JSON
+    embedded inside surrounding prose.
+    """
+    text = text.strip()
+
+    # Pull content out of a fenced code block if one exists anywhere in the text
+    fence = re.search(r"```(?:json)?\s*\n?(.*?)\n?\s*```", text, re.DOTALL)
+    if fence:
+        text = fence.group(1).strip()
+
+    # Try parsing as-is first
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Fall back: extract the outermost { ... } block to handle leading/trailing prose
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end > start:
+        return json.loads(text[start : end + 1])
+
+    raise json.JSONDecodeError("No JSON object found", text, 0)
+
+
+_FIELD_LABELS: dict[str, str] = {
+    "partyAName": "Party A's full name",
+    "partyACompany": "Party A's company name",
+    "partyAAddress": "Party A's address",
+    "partyAEmail": "Party A's email address",
+    "partyBName": "Party B's full name",
+    "partyBCompany": "Party B's company name",
+    "partyBAddress": "Party B's address",
+    "partyBEmail": "Party B's email address",
+    "purpose": "purpose of the NDA",
+    "effectiveDate": "effective date (e.g. April 25, 2026)",
+    "mndaTermYears": "MNDA term in years (whole number ≥ 1)",
+    "confidentialityYears": "term of confidentiality in years (whole number ≥ 1)",
+    "governingLaw": "governing law — state name (e.g. California)",
+    "jurisdiction": "jurisdiction for disputes (e.g. San Francisco, California)",
+}
+
+_CHAT_SYSTEM_PROMPT = """\
+You are a friendly legal assistant collecting information for a Mutual NDA, one field at a time.
+
+Current field status:
+{fields_status}
+
+ALWAYS respond with valid JSON — no text outside the JSON object:
+{{"message": "your message", "fields": {{"fieldName": "value"}}}}
+
+EXAMPLE EXCHANGES (follow this pattern exactly):
+
+Assistant asks: "What is Party A's full name?"
+User answers: "Jane Smith"
+You output: {{"message": "Thanks Jane! What is Party A's company name?", "fields": {{"partyAName": "Jane Smith"}}}}
+
+Assistant asks: "What is Party B's full name?"
+User answers: "same as Party A"  (Party A name is already "Jane Smith" in the status above)
+You output: {{"message": "Got it, Jane Smith for Party B too! What is Party B's company name?", "fields": {{"partyBName": "Jane Smith"}}}}
+
+Assistant asks: "How many years for the MNDA term?"
+User answers: "2 years"
+You output: {{"message": "Got it! How many years for the confidentiality term?", "fields": {{"mndaTermYears": 2}}}}
+
+User says nothing useful yet (e.g., "hello"):
+You output: {{"message": "Hello! Let's get started. What is Party A's full name?", "fields": {{}}}}
+
+RULES:
+1. Always put the user's answer into "fields" immediately — never skip or delay extraction.
+2. "same", "same as Party A/B", "same as above" → copy the value from the collected fields shown in the status.
+3. mndaTermYears and confidentialityYears must be JSON integers (2, not "2 years").
+4. Ask for one field at a time; move to the next uncollected field after each answer.
+5. When all fields are collected, congratulate the user and say the document is ready to generate.\
+"""
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ChatRequest(BaseModel):
+    messages: list[ChatMessage]
+    fields: dict
+
+
+@app.post("/api/chat")
+async def chat(body: ChatRequest):
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        return _bad("OPENROUTER_API_KEY not configured.", 500)
+
+    model = os.environ.get("CLAUDE_MODEL", "anthropic/claude-3.5-sonnet")
+
+    collected = {k: v for k, v in body.fields.items() if v}
+    status_lines = [
+        f"✓ {label}: {collected[field]}" if field in collected else f"○ {label}: (not yet collected)"
+        for field, label in _FIELD_LABELS.items()
+    ]
+    system = _CHAT_SYSTEM_PROMPT.format(fields_status="\n".join(status_lines))
+
+    messages = [{"role": m.role, "content": m.content} for m in body.messages]
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        try:
+            resp = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={
+                    "model": model,
+                    "messages": [{"role": "system", "content": system}, *messages],
+                },
+            )
+            resp.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            return _bad(f"AI service returned {exc.response.status_code}.", 502)
+        except httpx.HTTPError:
+            return _bad("Could not reach AI service.", 502)
+
+    raw = ""
+    try:
+        raw = resp.json()["choices"][0]["message"]["content"]
+        parsed = _extract_json(raw)
+        message = str(parsed["message"])
+        # Filter to known NDA fields only; guard against non-dict values
+        raw_fields = parsed.get("fields")
+        new_fields = (
+            {k: v for k, v in raw_fields.items() if k in _FIELD_LABELS}
+            if isinstance(raw_fields, dict)
+            else {}
+        )
+    except (KeyError, json.JSONDecodeError, TypeError) as exc:
+        print(f"AI parse error: {exc!r}\nRaw content: {raw!r}")
+        return _bad("Failed to parse AI response.", 502)
+
+    return {"message": message, "fields": new_fields}
 
 
 # Static files must be mounted last — API routes above take precedence
