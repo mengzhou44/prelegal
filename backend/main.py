@@ -131,22 +131,30 @@ async def generate_nda(request: Request):
 
 
 def _extract_json(text: str) -> dict:
-    """Parse JSON from Claude's response, tolerating markdown code fences and leading/trailing prose."""
+    """Parse JSON from Claude's response.
+
+    Handles: plain JSON, ```json fences anywhere in the text, and JSON
+    embedded inside surrounding prose.
+    """
     text = text.strip()
-    # Strip ```json ... ``` or ``` ... ``` fences
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\s*", "", text)
-        text = re.sub(r"\s*```\s*$", "", text).strip()
-    # Try direct parse first
+
+    # Pull content out of a fenced code block if one exists anywhere in the text
+    fence = re.search(r"```(?:json)?\s*\n?(.*?)\n?\s*```", text, re.DOTALL)
+    if fence:
+        text = fence.group(1).strip()
+
+    # Try parsing as-is first
     try:
         return json.loads(text)
     except json.JSONDecodeError:
         pass
-    # Fall back: find the outermost {...} block in the text
+
+    # Fall back: extract the outermost { ... } block to handle leading/trailing prose
     start = text.find("{")
     end = text.rfind("}")
-    if start != -1 and end != -1 and end > start:
+    if start != -1 and end > start:
         return json.loads(text[start : end + 1])
+
     raise json.JSONDecodeError("No JSON object found", text, 0)
 
 
@@ -230,11 +238,18 @@ async def chat(body: ChatRequest):
         except httpx.HTTPError:
             return _bad("Could not reach AI service.", 502)
 
+    raw = ""
     try:
         raw = resp.json()["choices"][0]["message"]["content"]
         parsed = _extract_json(raw)
         message = str(parsed["message"])
-        new_fields = parsed.get("fields", {})
+        # Filter to known NDA fields only; guard against non-dict values
+        raw_fields = parsed.get("fields")
+        new_fields = (
+            {k: v for k, v in raw_fields.items() if k in _FIELD_LABELS}
+            if isinstance(raw_fields, dict)
+            else {}
+        )
     except (KeyError, json.JSONDecodeError, TypeError) as exc:
         print(f"AI parse error: {exc!r}\nRaw content: {raw!r}")
         return _bad("Failed to parse AI response.", 502)
