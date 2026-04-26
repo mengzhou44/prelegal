@@ -298,6 +298,9 @@ Current field status:
 ALWAYS respond with valid JSON — no text outside the JSON object:
 {{"message": "your message", "documentType": "{doc_type}", "fields": {{"fieldName": "value"}}}}
 
+The field status above lists each field as: key="fieldName" (label): value
+Use the EXACT "fieldName" string (without quotes) as the key in your "fields" JSON object.
+
 CRITICAL RULE — THE "fields" OBJECT MUST ALWAYS CONTAIN EVERY VALUE YOU CONFIRM OR SET.
 If you mention a value anywhere in "message", it MUST also appear in "fields". Never describe a value without extracting it.
 
@@ -552,10 +555,11 @@ async def chat(body: ChatRequest):
         allowed_fields = set(field_labels.keys())
 
         collected = {k: v for k, v in body.fields.items() if v}
+        # Include the field key name explicitly so the AI uses the correct key in "fields"
         status_lines = [
-            f"✓ {label}: {collected[field]}"
+            f'✓ key="{field}" ({label}): {collected[field]}'
             if field in collected
-            else f"○ {label}: (not yet collected)"
+            else f'○ key="{field}" ({label}): (not yet collected)'
             for field, label in field_labels.items()
         ]
         int_hint = (
