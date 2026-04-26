@@ -5,6 +5,7 @@ import re
 import time
 from contextlib import asynccontextmanager
 
+import bcrypt
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -13,7 +14,7 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from database import init_db
+from database import get_connection, init_db
 from pdf_generator import NdaData, generate_generic_pdf, generate_nda_pdf
 
 load_dotenv()
@@ -37,7 +38,7 @@ app.add_middleware(
 )
 
 
-class LoginRequest(BaseModel):
+class AuthRequest(BaseModel):
     email: str
     password: str
 
@@ -47,9 +48,40 @@ async def health():
     return {"status": "ok"}
 
 
+@app.post("/api/auth/signup")
+async def signup(body: AuthRequest):
+    email = body.email.strip().lower()
+    if not email or not body.password:
+        return _bad("Email and password are required.")
+    if len(body.password) < 8:
+        return _bad("Password must be at least 8 characters.")
+
+    password_hash = bcrypt.hashpw(body.password.encode(), bcrypt.gensalt()).decode()
+    try:
+        with get_connection() as conn:
+            conn.execute(
+                "INSERT INTO users (email, password_hash) VALUES (?, ?)",
+                (email, password_hash),
+            )
+            conn.commit()
+    except Exception:
+        return _bad("An account with that email already exists.", 409)
+
+    return {"success": True, "user": {"email": email}}
+
+
 @app.post("/api/auth/login")
-async def login(body: LoginRequest):
-    return {"success": True, "user": {"email": body.email}}
+async def login(body: AuthRequest):
+    email = body.email.strip().lower()
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT password_hash FROM users WHERE email = ?", (email,)
+        ).fetchone()
+
+    if not row or not bcrypt.checkpw(body.password.encode(), row["password_hash"].encode()):
+        return _bad("Invalid email or password.", 401)
+
+    return {"success": True, "user": {"email": email}}
 
 
 # ── Catalog ────────────────────────────────────────────────────────────────────
