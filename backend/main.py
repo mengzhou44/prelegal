@@ -84,6 +84,50 @@ async def login(body: AuthRequest):
     return {"success": True, "user": {"email": email}}
 
 
+# ── Document history ───────────────────────────────────────────────────────────
+
+class SaveDocumentRequest(BaseModel):
+    email: str
+    documentType: str
+    fields: dict
+
+
+@app.post("/api/documents")
+async def save_document(body: SaveDocumentRequest):
+    email = body.email.strip().lower()
+    if not email or not body.documentType:
+        return _bad("email and documentType are required.")
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT INTO documents (user_email, document_type, fields_json) VALUES (?, ?, ?)",
+            (email, body.documentType, json.dumps(body.fields)),
+        )
+        conn.commit()
+    return {"success": True}
+
+
+@app.get("/api/documents")
+async def list_documents(email: str):
+    email = email.strip().lower()
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT id, document_type, fields_json, created_at FROM documents "
+            "WHERE user_email = ? ORDER BY created_at DESC LIMIT 50",
+            (email,),
+        ).fetchall()
+    return {
+        "documents": [
+            {
+                "id": r["id"],
+                "documentType": r["document_type"],
+                "fields": json.loads(r["fields_json"]),
+                "createdAt": r["created_at"],
+            }
+            for r in rows
+        ]
+    }
+
+
 # ── Catalog ────────────────────────────────────────────────────────────────────
 
 _CATALOG_PATH = pathlib.Path(__file__).parent / "catalog.json"

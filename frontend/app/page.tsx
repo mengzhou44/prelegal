@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { NdaPreview } from "@/components/nda-preview";
 import { ChatPanel, type ChatFields } from "@/components/chat-panel";
+import { HistoryDrawer } from "@/components/history-drawer";
 
 const MNDA = "Mutual Non-Disclosure Agreement";
 
@@ -30,6 +31,7 @@ export default function Home() {
   const [intFields, setIntFields] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -116,6 +118,15 @@ export default function Home() {
       a.download = `${safeName}-${Date.now()}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
+
+      // Save to document history (best-effort, non-blocking)
+      if (user?.email && documentType) {
+        fetch("/api/documents", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: user.email, documentType, fields: form }),
+        }).catch(() => {});
+      }
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
@@ -171,6 +182,12 @@ export default function Home() {
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-400 hidden sm:block">{user.email}</span>
                 <button
+                  onClick={() => setHistoryOpen(true)}
+                  className="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg transition-colors"
+                >
+                  My Documents
+                </button>
+                <button
                   onClick={() => {
                     localStorage.removeItem("prelegal_user");
                     router.replace("/login");
@@ -187,6 +204,14 @@ export default function Home() {
 
       {/* Main content */}
       <main className="max-w-[1800px] mx-auto p-6">
+        {/* Legal disclaimer */}
+        <div className="mb-4 px-4 py-3 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg flex items-start gap-2">
+          <span className="mt-0.5 flex-none">⚠️</span>
+          <span>
+            <strong>Legal review required.</strong> AI-generated documents are a starting point only. All documents should be reviewed by a qualified attorney before use.
+          </span>
+        </div>
+
         {error && (
           <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
             {error}
@@ -264,6 +289,14 @@ export default function Home() {
           </a>
         </div>
       </footer>
+
+      {user && (
+        <HistoryDrawer
+          email={user.email}
+          open={historyOpen}
+          onClose={() => setHistoryOpen(false)}
+        />
+      )}
     </div>
   );
 }
