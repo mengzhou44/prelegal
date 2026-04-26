@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import time
 from contextlib import asynccontextmanager
 
@@ -212,7 +213,12 @@ async def chat(body: ChatRequest):
 
     try:
         raw = resp.json()["choices"][0]["message"]["content"]
-        parsed = json.loads(raw)
+        # Strip markdown code fences if Claude wraps the JSON
+        stripped = raw.strip()
+        if stripped.startswith("```"):
+            stripped = re.sub(r"^```(?:json)?\s*", "", stripped)
+            stripped = re.sub(r"\s*```$", "", stripped).strip()
+        parsed = json.loads(stripped)
         message = str(parsed["message"])
         new_fields = parsed.get("fields", {})
     except (KeyError, json.JSONDecodeError, TypeError):
