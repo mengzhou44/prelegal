@@ -130,6 +130,26 @@ async def generate_nda(request: Request):
     )
 
 
+def _extract_json(text: str) -> dict:
+    """Parse JSON from Claude's response, tolerating markdown code fences and leading/trailing prose."""
+    text = text.strip()
+    # Strip ```json ... ``` or ``` ... ``` fences
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text)
+        text = re.sub(r"\s*```\s*$", "", text).strip()
+    # Try direct parse first
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    # Fall back: find the outermost {...} block in the text
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        return json.loads(text[start : end + 1])
+    raise json.JSONDecodeError("No JSON object found", text, 0)
+
+
 _FIELD_LABELS: dict[str, str] = {
     "partyAName": "Party A's full name",
     "partyACompany": "Party A's company name",
@@ -202,7 +222,6 @@ async def chat(body: ChatRequest):
                 json={
                     "model": model,
                     "messages": [{"role": "system", "content": system}, *messages],
-                    "response_format": {"type": "json_object"},
                 },
             )
             resp.raise_for_status()
@@ -213,15 +232,11 @@ async def chat(body: ChatRequest):
 
     try:
         raw = resp.json()["choices"][0]["message"]["content"]
-        # Strip markdown code fences if Claude wraps the JSON
-        stripped = raw.strip()
-        if stripped.startswith("```"):
-            stripped = re.sub(r"^```(?:json)?\s*", "", stripped)
-            stripped = re.sub(r"\s*```$", "", stripped).strip()
-        parsed = json.loads(stripped)
+        parsed = _extract_json(raw)
         message = str(parsed["message"])
         new_fields = parsed.get("fields", {})
-    except (KeyError, json.JSONDecodeError, TypeError):
+    except (KeyError, json.JSONDecodeError, TypeError) as exc:
+        print(f"AI parse error: {exc!r}\nRaw content: {raw!r}")
         return _bad("Failed to parse AI response.", 502)
 
     return {"message": message, "fields": new_fields}
