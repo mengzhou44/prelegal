@@ -1,4 +1,5 @@
 import html
+import re
 from dataclasses import dataclass
 from io import BytesIO
 
@@ -10,6 +11,7 @@ from reportlab.platypus import (
     HRFlowable,
     Paragraph,
     SimpleDocTemplate,
+    Spacer,
     Table,
     TableStyle,
 )
@@ -220,6 +222,67 @@ def generate_nda_pdf(data: NdaData) -> bytes:
             _FOOTER_STYLE,
         ),
     ]
+
+    doc.build(story)
+    return buf.getvalue()
+
+
+def _md_to_rl(block: str) -> str:
+    """Convert a markdown paragraph block to ReportLab XML-safe string."""
+    # Strip coverpage_link spans — keep inner text
+    block = re.sub(r'<span[^>]*>([^<]*)</span>', r'\1', block)
+    # Strip markdown links [text](url) → text
+    block = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', block)
+    # HTML-escape first (before adding XML tags)
+    block = html.escape(block)
+    # Convert **bold** and *italic* (asterisks survive html.escape)
+    block = re.sub(r'\*\*([^*]+)\*\*', r'<b>\1</b>', block)
+    block = re.sub(r'\*([^*]+)\*', r'<i>\1</i>', block)
+    return block
+
+
+def generate_generic_pdf(
+    doc_type: str,
+    fields: dict[str, str],
+    field_labels: dict[str, str],
+    template_content: str,
+) -> bytes:
+    """Generate a cover-page + standard-terms PDF for any non-MNDA document type."""
+    buf = BytesIO()
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=LETTER,
+        topMargin=MARGIN,
+        bottomMargin=MARGIN,
+        leftMargin=MARGIN,
+        rightMargin=MARGIN,
+    )
+
+    story: list = [
+        Paragraph(_e(doc_type), _TITLE_STYLE),
+        Paragraph("<u>Cover Page</u>", _SECTION_STYLE),
+        _cover_table([
+            (label, fields.get(field, ""))
+            for field, label in field_labels.items()
+        ]),
+        _hr(),
+        Paragraph("<u>Standard Terms</u>", _SECTION_STYLE),
+    ]
+
+    for block in re.split(r'\n{2,}', template_content.strip()):
+        block = block.strip()
+        if not block:
+            continue
+        story.append(Paragraph(_md_to_rl(block), _CLAUSE_STYLE))
+
+    story.append(Spacer(1, 8))
+    story.append(
+        Paragraph(
+            f"Common Paper {_e(doc_type)} — Licensed under CC BY 4.0 "
+            "(https://creativecommons.org/licenses/by/4.0/)",
+            _FOOTER_STYLE,
+        )
+    )
 
     doc.build(story)
     return buf.getvalue()

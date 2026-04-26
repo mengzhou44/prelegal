@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+// Kept for NdaPreview compatibility
 export interface ChatFields {
   partyAName: string;
   partyACompany: string;
@@ -25,17 +26,28 @@ interface Message {
 }
 
 interface ChatPanelProps {
-  fields: ChatFields;
-  onFieldsUpdate: (fields: Partial<Record<keyof ChatFields, string>>) => void;
+  documentType: string | null;
+  fields: Record<string, string>;
+  onFieldsUpdate: (fields: Record<string, string>) => void;
+  onDocumentTypeChange: (type: string, requiredFields: string[], intFields: string[]) => void;
+  onRequiredFieldsUpdate: (requiredFields: string[], intFields: string[]) => void;
 }
 
-export function ChatPanel({ fields, onFieldsUpdate }: ChatPanelProps) {
+export function ChatPanel({
+  documentType,
+  fields,
+  onFieldsUpdate,
+  onDocumentTypeChange,
+  onRequiredFieldsUpdate,
+}: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fieldsRef = useRef(fields);
   fieldsRef.current = fields;
+  const documentTypeRef = useRef(documentType);
+  documentTypeRef.current = documentType;
   const initializedRef = useRef(false);
 
   useEffect(() => {
@@ -55,7 +67,11 @@ export function ChatPanel({ fields, onFieldsUpdate }: ChatPanelProps) {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: msgs, fields: fieldsRef.current }),
+        body: JSON.stringify({
+          messages: msgs,
+          fields: fieldsRef.current,
+          documentType: documentTypeRef.current,
+        }),
       });
 
       const data = await res.json();
@@ -70,10 +86,21 @@ export function ChatPanel({ fields, onFieldsUpdate }: ChatPanelProps) {
 
       setMessages((prev) => [...prev, { role: "assistant", content: data.message }]);
 
+      if (data.documentType && data.documentType !== documentTypeRef.current) {
+        onDocumentTypeChange(
+          data.documentType,
+          data.requiredFields ?? [],
+          data.intFields ?? [],
+        );
+      } else if (data.documentType && data.requiredFields?.length) {
+        // Keep required fields in sync on every response in case they were missed initially
+        onRequiredFieldsUpdate(data.requiredFields, data.intFields ?? []);
+      }
+
       if (data.fields && Object.keys(data.fields).length > 0) {
-        const normalized: Partial<Record<keyof ChatFields, string>> = {};
+        const normalized: Record<string, string> = {};
         for (const [k, v] of Object.entries(data.fields)) {
-          normalized[k as keyof ChatFields] = String(v);
+          normalized[k] = String(v);
         }
         onFieldsUpdate(normalized);
       }
@@ -108,10 +135,9 @@ export function ChatPanel({ fields, onFieldsUpdate }: ChatPanelProps) {
             <div
               className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
                 msg.role === "user"
-                  ? "text-white rounded-br-sm"
+                  ? "bg-blue-600 text-white rounded-br-sm"
                   : "bg-white shadow-sm ring-1 ring-slate-200 text-slate-800 rounded-bl-sm"
               }`}
-              style={msg.role === "user" ? { backgroundColor: "#753991" } : undefined}
             >
               {msg.content}
             </div>
@@ -145,14 +171,12 @@ export function ChatPanel({ fields, onFieldsUpdate }: ChatPanelProps) {
             }}
             placeholder="Type your answer…"
             disabled={loading}
-            className="flex-1 h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:border-purple-400 focus:bg-white transition-all disabled:opacity-50"
-            style={{ "--tw-ring-color": "rgb(117 57 145 / 0.3)" } as React.CSSProperties}
+            className="flex-1 h-10 px-3 rounded-xl border border-slate-300 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all disabled:opacity-50"
           />
           <button
             onClick={handleSend}
             disabled={loading || !input.trim()}
-            className="h-10 px-4 rounded-xl text-white text-sm font-semibold transition-colors disabled:opacity-40 cursor-pointer"
-            style={{ backgroundColor: "#753991" }}
+            className="h-10 px-4 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-sm font-semibold transition-colors disabled:opacity-40 cursor-pointer"
           >
             Send
           </button>
