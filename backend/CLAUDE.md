@@ -19,7 +19,8 @@ backend/
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/api/health` | Health check |
-| `POST` | `/api/auth/login` | Fake login — always succeeds, returns `{ email }` |
+| `POST` | `/api/auth/signup` | Create account (bcrypt hash, 409 on duplicate email) |
+| `POST` | `/api/auth/login` | Verify credentials (bcrypt compare, 401 on bad password) |
 | `POST` | `/api/chat` | Two-phase AI chat (type selection + field collection) |
 | `POST` | `/api/generate-nda` | Generate Mutual NDA PDF (legacy endpoint, validated separately) |
 | `POST` | `/api/generate-doc` | Generate PDF for any of the 11 document types |

@@ -135,10 +135,9 @@ export function ChatPanel({
             <div
               className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
                 msg.role === "user"
-                  ? "text-white rounded-br-sm"
+                  ? "bg-blue-600 text-white rounded-br-sm"
                   : "bg-white shadow-sm ring-1 ring-slate-200 text-slate-800 rounded-bl-sm"
               }`}
-              style={msg.role === "user" ? { backgroundColor: "#753991" } : undefined}
             >
               {msg.content}
             </div>
@@ -172,14 +171,12 @@ export function ChatPanel({
             }}
             placeholder="Type your answer…"
             disabled={loading}
-            className="flex-1 h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:border-purple-400 focus:bg-white transition-all disabled:opacity-50"
-            style={{ "--tw-ring-color": "rgb(117 57 145 / 0.3)" } as React.CSSProperties}
+            className="flex-1 h-10 px-3 rounded-xl border border-slate-300 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all disabled:opacity-50"
           />
           <button
             onClick={handleSend}
             disabled={loading || !input.trim()}
-            className="h-10 px-4 rounded-xl text-white text-sm font-semibold transition-colors disabled:opacity-40 cursor-pointer"
-            style={{ backgroundColor: "#753991" }}
+            className="h-10 px-4 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-sm font-semibold transition-colors disabled:opacity-40 cursor-pointer"
           >
             Send
           </button>

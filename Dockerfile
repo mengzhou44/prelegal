@@ -17,7 +17,8 @@ WORKDIR /app
 COPY backend/pyproject.toml ./
 RUN uv sync --no-dev --no-install-project
 
-COPY backend/main.py backend/pdf_generator.py backend/database.py ./
+COPY backend/main.py backend/pdf_generator.py backend/database.py backend/catalog.json ./
+COPY backend/templates/ ./templates/
 
 COPY --from=frontend-builder /app/frontend/out ./static
 

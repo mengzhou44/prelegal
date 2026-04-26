@@ -7,16 +7,19 @@ Next.js 16 app configured as a **static export** (`output: 'export'` in `next.co
 ## Pages
 
 - `/` (`app/page.tsx`) — Legal Document Creator: two-column layout with a resizable chat panel and live document preview. Supports all 11 document types from the catalog. Checks localStorage for a session on mount and redirects to `/login` if none is found.
-- `/login` (`app/login/page.tsx`) — Login form (email + password). Calls `POST /api/auth/login` on submit; the backend always returns success regardless of credentials. Stores `{ email }` in `localStorage` as `prelegal_user` and redirects to `/`.
+- `/login` (`app/login/page.tsx`) — Sign in / Sign up with tab toggle. Calls `POST /api/auth/login` or `POST /api/auth/signup`; passwords are bcrypt-hashed server-side. Stores `{ email }` in `localStorage` as `prelegal_user` and redirects to `/`.
 
 ## Auth
 
-Fake authentication using `localStorage`. No real tokens or cookies.
+Session stored in `localStorage` (no cookies). Passwords are bcrypt-hashed server-side.
 
 - **Session key**: `prelegal_user` — JSON object `{ email: string }`
-- **Login**: POST to `/api/auth/login` → store result → `router.replace('/')`
+- **Sign up**: POST to `/api/auth/signup` → 409 if email exists → store result → `router.replace('/')`
+- **Sign in**: POST to `/api/auth/login` → 401 on bad credentials → store result → `router.replace('/')`
 - **Auth check**: `useEffect` in `app/page.tsx` reads localStorage; missing or invalid → `router.replace('/login')`
 - **Sign out**: clears `prelegal_user` from localStorage, redirects to `/login`
+
+The login page (`app/login/page.tsx`) has a tab toggle between Sign In and Sign Up modes. Sign Up requires a password ≥ 8 characters with a confirmation field.
 
 ## Chat Flow
 
