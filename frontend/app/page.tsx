@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { NdaPreview } from "@/components/nda-preview";
 
 interface FormData {
@@ -156,10 +157,25 @@ function PartySection({
 }
 
 export default function Home() {
+  const [user, setUser] = useState<{ email: string } | null>(null);
   const [form, setForm] = useState<FormData>(empty);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formWidth, setFormWidth] = useState(420);
+  const router = useRouter();
+
+  useEffect(() => {
+    const stored = localStorage.getItem("prelegal_user");
+    if (!stored) {
+      router.replace("/login");
+      return;
+    }
+    try {
+      setUser(JSON.parse(stored));
+    } catch {
+      router.replace("/login");
+    }
+  }, [router]);
   const formWidthRef = useRef(formWidth);
   formWidthRef.current = formWidth;
   const dragState = useRef<{ startX: number; startWidth: number } | null>(null);
@@ -233,17 +249,26 @@ export default function Home() {
       {/* Header */}
       <header className="flex-none h-13 bg-white border-b border-slate-200 flex items-center px-6 gap-4">
         <div className="flex items-center gap-2.5">
-          <span className="text-indigo-500 text-lg">⚖</span>
-          <span className="text-slate-800 font-semibold text-sm tracking-tight">
+          <span className="text-lg" style={{ color: "#209dd7" }}>⚖</span>
+          <span className="font-semibold text-sm tracking-tight" style={{ color: "#032147" }}>
             PreLegal
           </span>
         </div>
         <span className="text-slate-300 text-sm">/</span>
         <span className="text-slate-500 text-sm">Mutual NDA Creator</span>
-        <div className="ml-auto">
-          <span className="text-[11px] bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-full px-2.5 py-0.5 font-medium tracking-wide">
-            PROTOTYPE
-          </span>
+        <div className="ml-auto flex items-center gap-3">
+          {user && (
+            <span className="text-xs text-slate-400">{user.email}</span>
+          )}
+          <button
+            onClick={() => {
+              localStorage.removeItem("prelegal_user");
+              router.replace("/login");
+            }}
+            className="text-[11px] text-slate-500 hover:text-slate-700 border border-slate-200 rounded-full px-2.5 py-0.5 transition-colors cursor-pointer"
+          >
+            Sign out
+          </button>
         </div>
       </header>
 
