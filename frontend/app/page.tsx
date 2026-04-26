@@ -1,27 +1,11 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { NdaPreview } from "@/components/nda-preview";
+import { ChatPanel, type ChatFields } from "@/components/chat-panel";
 
-interface FormData {
-  partyAName: string;
-  partyACompany: string;
-  partyAAddress: string;
-  partyAEmail: string;
-  partyBName: string;
-  partyBCompany: string;
-  partyBAddress: string;
-  partyBEmail: string;
-  purpose: string;
-  effectiveDate: string;
-  mndaTermYears: string;
-  confidentialityYears: string;
-  governingLaw: string;
-  jurisdiction: string;
-}
-
-const empty: FormData = {
+const empty: ChatFields = {
   partyAName: "",
   partyACompany: "",
   partyAAddress: "",
@@ -38,130 +22,22 @@ const empty: FormData = {
   jurisdiction: "",
 };
 
-function FormSection({
-  badge,
-  title,
-  children,
-}: {
-  badge?: string;
-  title: string;
-  children: React.ReactNode;
-}) {
+function isComplete(fields: ChatFields): boolean {
   return (
-    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/60 overflow-hidden">
-      <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2.5">
-        {badge && (
-          <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-bold flex items-center justify-center shrink-0">
-            {badge}
-          </span>
-        )}
-        <h2 className="text-sm font-semibold text-slate-800">{title}</h2>
-      </div>
-      <div className="p-5 space-y-4">{children}</div>
-    </div>
-  );
-}
-
-function Field({
-  id,
-  label,
-  placeholder,
-  value,
-  onChange,
-  type = "text",
-  suffix,
-}: {
-  id: keyof FormData;
-  label: string;
-  placeholder: string;
-  value: string;
-  onChange: (id: keyof FormData, val: string) => void;
-  type?: string;
-  suffix?: string;
-}) {
-  return (
-    <div>
-      <label
-        htmlFor={id}
-        className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5"
-      >
-        {label}
-      </label>
-      <div className="flex items-center gap-2">
-        <input
-          id={id}
-          type={type}
-          placeholder={placeholder}
-          value={value}
-          min={type === "number" ? 1 : undefined}
-          step={type === "number" ? 1 : undefined}
-          onChange={(e) => onChange(id, e.target.value)}
-          className={`${suffix ? "w-24" : "w-full"} h-9 px-3 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-400 focus:bg-white transition-all`}
-        />
-        {suffix && (
-          <span className="text-xs text-slate-400 whitespace-nowrap">
-            {suffix}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function PartySection({
-  prefix,
-  label,
-  badge,
-  form,
-  onChange,
-}: {
-  prefix: "partyA" | "partyB";
-  label: string;
-  badge: string;
-  form: FormData;
-  onChange: (id: keyof FormData, val: string) => void;
-}) {
-  return (
-    <FormSection badge={badge} title={label}>
-      <Field
-        id={`${prefix}Name` as keyof FormData}
-        label="Full Name"
-        placeholder="Jane Smith"
-        value={form[`${prefix}Name` as keyof FormData]}
-        onChange={onChange}
-      />
-      <Field
-        id={`${prefix}Company` as keyof FormData}
-        label="Company"
-        placeholder="Acme Corp"
-        value={form[`${prefix}Company` as keyof FormData]}
-        onChange={onChange}
-      />
-      <Field
-        id={`${prefix}Address` as keyof FormData}
-        label="Address"
-        placeholder="123 Main St, San Francisco, CA 94105"
-        value={form[`${prefix}Address` as keyof FormData]}
-        onChange={onChange}
-      />
-      <Field
-        id={`${prefix}Email` as keyof FormData}
-        label="Email"
-        placeholder="jane@acme.com"
-        value={form[`${prefix}Email` as keyof FormData]}
-        onChange={onChange}
-        type="email"
-      />
-    </FormSection>
+    Object.values(fields).every((v) => v.trim() !== "") &&
+    Number.isInteger(Number(fields.mndaTermYears)) &&
+    Number(fields.mndaTermYears) >= 1 &&
+    Number.isInteger(Number(fields.confidentialityYears)) &&
+    Number(fields.confidentialityYears) >= 1
   );
 }
 
 export default function Home() {
   const [user, setUser] = useState<{ email: string } | null>(null);
-  const [form, setForm] = useState<FormData>(empty);
+  const [form, setForm] = useState<ChatFields>(empty);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formWidth, setFormWidth] = useState(420);
+  const [panelWidth, setPanelWidth] = useState(420);
   const router = useRouter();
 
   useEffect(() => {
@@ -176,18 +52,19 @@ export default function Home() {
       router.replace("/login");
     }
   }, [router]);
-  const formWidthRef = useRef(formWidth);
-  formWidthRef.current = formWidth;
+
+  const panelWidthRef = useRef(panelWidth);
+  panelWidthRef.current = panelWidth;
   const dragState = useRef<{ startX: number; startWidth: number } | null>(null);
 
   const onDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    dragState.current = { startX: e.clientX, startWidth: formWidthRef.current };
+    dragState.current = { startX: e.clientX, startWidth: panelWidthRef.current };
 
     function onMove(ev: MouseEvent) {
       if (!dragState.current) return;
       const delta = ev.clientX - dragState.current.startX;
-      setFormWidth(Math.min(700, Math.max(280, dragState.current.startWidth + delta)));
+      setPanelWidth(Math.min(700, Math.max(280, dragState.current.startWidth + delta)));
     }
 
     function onUp() {
@@ -200,8 +77,8 @@ export default function Home() {
     document.addEventListener("mouseup", onUp);
   }, []);
 
-  function handleChange(id: keyof FormData, val: string) {
-    setForm((prev) => ({ ...prev, [id]: val }));
+  function handleFieldsUpdate(fields: Partial<Record<keyof ChatFields, string>>) {
+    setForm((prev) => ({ ...prev, ...fields }));
   }
 
   async function handleGenerate() {
@@ -225,7 +102,7 @@ export default function Home() {
         try {
           const body = await res.json();
           message = body.error ?? message;
-        } catch { /* non-JSON error body, keep default */ }
+        } catch { /* non-JSON error body */ }
         setError(message);
         return;
       }
@@ -244,6 +121,8 @@ export default function Home() {
     }
   }
 
+  const complete = isComplete(form);
+
   return (
     <div className="h-screen flex flex-col bg-white">
       {/* Header */}
@@ -257,9 +136,7 @@ export default function Home() {
         <span className="text-slate-300 text-sm">/</span>
         <span className="text-slate-500 text-sm">Mutual NDA Creator</span>
         <div className="ml-auto flex items-center gap-3">
-          {user && (
-            <span className="text-xs text-slate-400">{user.email}</span>
-          )}
+          {user && <span className="text-xs text-slate-400">{user.email}</span>}
           <button
             onClick={() => {
               localStorage.removeItem("prelegal_user");
@@ -274,73 +151,26 @@ export default function Home() {
 
       {/* Two-column body */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left: Form */}
-        <div style={{ width: formWidth }} className="flex-none overflow-y-auto bg-slate-50 p-5 space-y-4">
-          <div className="pt-1 pb-2">
-            <h1 className="text-base font-semibold text-slate-800">
-              Fill in the details
-            </h1>
+        {/* Left: Chat */}
+        <div
+          style={{ width: panelWidth }}
+          className="flex-none flex flex-col bg-slate-50 overflow-hidden"
+        >
+          {/* Chat header */}
+          <div className="flex-none px-5 py-3.5 border-b border-slate-100 bg-white">
+            <h1 className="text-sm font-semibold text-slate-800">AI Assistant</h1>
             <p className="text-xs text-slate-400 mt-0.5">
-              The document preview updates as you type.
+              Answer the questions to populate the document.
             </p>
           </div>
 
-          <PartySection prefix="partyA" label="Party A" badge="A" form={form} onChange={handleChange} />
-          <PartySection prefix="partyB" label="Party B" badge="B" form={form} onChange={handleChange} />
+          {/* Chat messages + input */}
+          <div className="flex-1 overflow-hidden">
+            <ChatPanel fields={form} onFieldsUpdate={handleFieldsUpdate} />
+          </div>
 
-          <FormSection title="Agreement Terms">
-            <Field
-              id="purpose"
-              label="Purpose"
-              placeholder="Evaluating a potential business partnership"
-              value={form.purpose}
-              onChange={handleChange}
-            />
-            <Field
-              id="effectiveDate"
-              label="Effective Date"
-              placeholder="January 1, 2025"
-              value={form.effectiveDate}
-              onChange={handleChange}
-            />
-            <Field
-              id="mndaTermYears"
-              label="MNDA Term"
-              placeholder="1"
-              value={form.mndaTermYears}
-              onChange={handleChange}
-              type="number"
-              suffix="year(s) from effective date"
-            />
-            <Field
-              id="confidentialityYears"
-              label="Term of Confidentiality"
-              placeholder="2"
-              value={form.confidentialityYears}
-              onChange={handleChange}
-              type="number"
-              suffix="year(s) from effective date"
-            />
-          </FormSection>
-
-          <FormSection title="Legal Jurisdiction">
-            <Field
-              id="governingLaw"
-              label="Governing Law (State)"
-              placeholder="California"
-              value={form.governingLaw}
-              onChange={handleChange}
-            />
-            <Field
-              id="jurisdiction"
-              label="Jurisdiction (Courts)"
-              placeholder="San Francisco, California"
-              value={form.jurisdiction}
-              onChange={handleChange}
-            />
-          </FormSection>
-
-          <div className="pb-4 space-y-3">
+          {/* Generate button */}
+          <div className="flex-none px-4 pb-4 pt-2 bg-slate-50 border-t border-slate-100 space-y-2">
             {error && (
               <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                 {error}
@@ -348,8 +178,9 @@ export default function Home() {
             )}
             <button
               onClick={handleGenerate}
-              disabled={loading}
-              className="w-full h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-semibold tracking-wide transition-colors shadow-sm cursor-pointer"
+              disabled={!complete || loading}
+              className="w-full h-10 rounded-xl text-white text-sm font-semibold tracking-wide transition-colors shadow-sm disabled:opacity-40 cursor-pointer"
+              style={{ backgroundColor: "#753991" }}
             >
               {loading ? "Generating…" : "↓ Generate PDF"}
             </button>
