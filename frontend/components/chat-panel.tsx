@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+// Kept for NdaPreview compatibility
 export interface ChatFields {
   partyAName: string;
   partyACompany: string;
@@ -25,17 +26,26 @@ interface Message {
 }
 
 interface ChatPanelProps {
-  fields: ChatFields;
-  onFieldsUpdate: (fields: Partial<Record<keyof ChatFields, string>>) => void;
+  documentType: string | null;
+  fields: Record<string, string>;
+  onFieldsUpdate: (fields: Record<string, string>) => void;
+  onDocumentTypeChange: (type: string, requiredFields: string[], intFields: string[]) => void;
 }
 
-export function ChatPanel({ fields, onFieldsUpdate }: ChatPanelProps) {
+export function ChatPanel({
+  documentType,
+  fields,
+  onFieldsUpdate,
+  onDocumentTypeChange,
+}: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fieldsRef = useRef(fields);
   fieldsRef.current = fields;
+  const documentTypeRef = useRef(documentType);
+  documentTypeRef.current = documentType;
   const initializedRef = useRef(false);
 
   useEffect(() => {
@@ -55,7 +65,11 @@ export function ChatPanel({ fields, onFieldsUpdate }: ChatPanelProps) {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: msgs, fields: fieldsRef.current }),
+        body: JSON.stringify({
+          messages: msgs,
+          fields: fieldsRef.current,
+          documentType: documentTypeRef.current,
+        }),
       });
 
       const data = await res.json();
@@ -70,10 +84,18 @@ export function ChatPanel({ fields, onFieldsUpdate }: ChatPanelProps) {
 
       setMessages((prev) => [...prev, { role: "assistant", content: data.message }]);
 
+      if (data.documentType && data.documentType !== documentTypeRef.current) {
+        onDocumentTypeChange(
+          data.documentType,
+          data.requiredFields ?? [],
+          data.intFields ?? [],
+        );
+      }
+
       if (data.fields && Object.keys(data.fields).length > 0) {
-        const normalized: Partial<Record<keyof ChatFields, string>> = {};
+        const normalized: Record<string, string> = {};
         for (const [k, v] of Object.entries(data.fields)) {
-          normalized[k as keyof ChatFields] = String(v);
+          normalized[k] = String(v);
         }
         onFieldsUpdate(normalized);
       }
