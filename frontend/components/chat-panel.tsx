@@ -30,6 +30,7 @@ interface ChatPanelProps {
   fields: Record<string, string>;
   onFieldsUpdate: (fields: Record<string, string>) => void;
   onDocumentTypeChange: (type: string, requiredFields: string[], intFields: string[]) => void;
+  onRequiredFieldsUpdate: (requiredFields: string[], intFields: string[]) => void;
 }
 
 export function ChatPanel({
@@ -37,6 +38,7 @@ export function ChatPanel({
   fields,
   onFieldsUpdate,
   onDocumentTypeChange,
+  onRequiredFieldsUpdate,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -90,6 +92,9 @@ export function ChatPanel({
           data.requiredFields ?? [],
           data.intFields ?? [],
         );
+      } else if (data.documentType && data.requiredFields?.length) {
+        // Keep required fields in sync on every response in case they were missed initially
+        onRequiredFieldsUpdate(data.requiredFields, data.intFields ?? []);
       }
 
       if (data.fields && Object.keys(data.fields).length > 0) {

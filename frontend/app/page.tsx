@@ -78,6 +78,13 @@ export default function Home() {
     setError(null);
   }
 
+  function handleRequiredFieldsUpdate(reqFields: string[], iFields: string[]) {
+    if (reqFields.length > 0) {
+      setRequiredFields(reqFields);
+      setIntFields(iFields);
+    }
+  }
+
   function handleFieldsUpdate(fields: Record<string, string>) {
     setForm((prev) => ({ ...prev, ...fields }));
   }
@@ -203,6 +210,7 @@ export default function Home() {
               fields={form}
               onFieldsUpdate={handleFieldsUpdate}
               onDocumentTypeChange={handleDocumentTypeChange}
+              onRequiredFieldsUpdate={handleRequiredFieldsUpdate}
             />
           </div>
 
